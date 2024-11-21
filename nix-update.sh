@@ -28,7 +28,16 @@ updatePackages() {
         continue
     fi
     echo "Updating package '$PACKAGE'."
-    nix-update --flake --commit "$PACKAGE" 1>/dev/null
+    if nix-update --flake --commit "$PACKAGE" 1>/dev/null; then 
+      echo "Package '$PACKAGE' updated successfully."
+    else
+      echo "Trying to use unstable updator for '$PACKAGE'."
+      if nix-update --version=branch --flake --commit "$PACKAGE" 1>/dev/null; then
+        echo "Package '$PACKAGE' updated successfully."
+      else
+        echo "Failed to update package '$PACKAGE'."
+      fi 
+    fi
   done
 }
 
