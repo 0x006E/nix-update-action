@@ -16,7 +16,13 @@ sanitizeInputs() {
 determinePackages() {
   # determine packages to update
   if [[ -z "$PACKAGES" ]]; then
-    PACKAGES=$(nix flake show --json | jq -r '[.packages[] | keys[]] | sort | unique |  join(",")')
+    # List names scoped to the current system instead of `nix flake show`:
+    # a full show evaluates the entire flake (incl. all nixosConfigurations),
+    # which OOMs constrained runners on big flakes. attrNames only forces
+    # the package set's keys, so this takes seconds and can't trip over
+    # unrelated evaluation issues.
+    SYSTEM=$(nix eval --impure --raw --expr builtins.currentSystem)
+    PACKAGES=$(nix eval --json ".#packages.$SYSTEM" --apply 'pkgs: builtins.attrNames pkgs' | jq -r 'sort | unique | join(",")')
   fi
 }
 
